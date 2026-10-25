@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { clearCache, getCustomerByPhone, listMessages, simulateIncoming, subscribeToChanges } from '../lib/api'
+import { clearCache, getCustomerByPhone, listMessages, setBotPaused, simulateIncoming, subscribeToChanges } from '../lib/api'
 import { fmtTime, friendlyError } from '../lib/format'
 import { ErrorBox, useToast } from '../components/ui'
 import Icon from '../components/Icon'
@@ -104,12 +104,31 @@ export default function Simulator() {
     try {
       const result = await simulateIncoming(me.phone, me.name, body)
       if (!result.ok) toast(result.error, 'danger')
-      await new Promise((r) => setTimeout(r, 500)) // tempo de "digitando…"
-      await load()
+      if (result.replyText) {
+        // mostra logo a resposta da IA; a lista completa atualiza a seguir
+        setMessages((list) => [
+          ...list,
+          { id: `ai-${Date.now()}`, sender: 'bot', body: result.replyText, created_at: new Date().toISOString() },
+        ])
+        load()
+      } else {
+        await new Promise((r) => setTimeout(r, 400)) // tempo de "digitando…"
+        await load()
+      }
     } catch (err) {
       toast(friendlyError(err), 'danger')
     } finally {
       setTyping(false)
+    }
+  }
+
+  async function resumeBot() {
+    try {
+      await setBotPaused(customer.id, false)
+      toast('A assistente voltou a responder esta conversa.')
+      load()
+    } catch (err) {
+      toast(friendlyError(err), 'danger')
     }
   }
 
@@ -184,6 +203,15 @@ export default function Simulator() {
                   <li ref={endRef} />
                 </ol>
               </div>
+
+              {customer?.bot_paused && (
+                <div className="phone-paused">
+                  <span>A recepção assumiu esta conversa. As respostas agora vêm da equipe, em Conversas.</span>
+                  <button type="button" className="btn btn-soft btn-sm" onClick={resumeBot}>
+                    Devolver à assistente
+                  </button>
+                </div>
+              )}
 
               <div className="phone-chips" role="group" aria-label="Sugestões">
                 {SUGGESTIONS.map((s) => (

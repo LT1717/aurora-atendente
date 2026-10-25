@@ -204,7 +204,7 @@ export async function simulateIncoming(phone, name, body) {
   const { data, error } = await supabase.functions.invoke('ai-reply', { body: { customer_id: r.customer_id } })
   cache.clear()
   if (error) return { ok: false, error: 'A IA não respondeu (função ai-reply não instalada ou sem chave).' }
-  return data?.ok === false ? { ok: false, error: data.error } : { ok: true }
+  return data?.ok === false ? { ok: false, error: data.error } : { ok: true, replyText: data?.reply_text }
 }
 
 /** Respostas da IA usadas hoje */
