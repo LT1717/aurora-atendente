@@ -124,6 +124,9 @@ legend { padding: 0; margin-bottom: 8px; }
 .switch.on span { transform: translateX(16px); }
 .switch-row { display: flex; gap: 14px; align-items: flex-start; }
 .switch-row.big strong { font-size: 16px; }
+.ai-row { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.ai-row-text { flex: 1; min-width: 220px; }
+.ai-row .field { width: 230px; }
 
 /* ---------- Etiquetas ---------- */
 .badge {

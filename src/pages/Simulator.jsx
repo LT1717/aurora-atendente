@@ -102,8 +102,9 @@ export default function Simulator() {
     ])
     setTyping(true)
     try {
-      await simulateIncoming(me.phone, me.name, body)
-      await new Promise((r) => setTimeout(r, 700)) // tempo de "digitando…"
+      const result = await simulateIncoming(me.phone, me.name, body)
+      if (!result.ok) toast(result.error, 'danger')
+      await new Promise((r) => setTimeout(r, 500)) // tempo de "digitando…"
       await load()
     } catch (err) {
       toast(friendlyError(err), 'danger')
@@ -234,8 +235,8 @@ export default function Simulator() {
             )}
           </section>
           <p className="muted small sim-note">
-            Ainda sem IA: as respostas usam palavras-chave. Na próxima fase, a IA responde a qualquer pergunta e agenda
-            sozinha.
+            Com a IA ligada (em Configurações), a assistente responde a qualquer pergunta e agenda sozinha nos horários
+            livres. Com a IA desligada, usa respostas por palavras-chave.
           </p>
         </aside>
       </div>

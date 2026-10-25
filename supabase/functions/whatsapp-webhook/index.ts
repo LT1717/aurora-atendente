@@ -9,7 +9,7 @@
 //  Configuração no Supabase:
 //   • "Verify JWT" DESLIGADO (a Meta não envia login do Supabase)
 //   • Secrets: WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID,
-//              WHATSAPP_VERIFY_TOKEN, WHATSAPP_APP_SECRET
+//              WHATSAPP_VERIFY_TOKEN, WHATSAPP_APP_SECRET, INTERNAL_SECRET
 // =====================================================================
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -69,14 +69,22 @@ Deno.serve(async (req) => {
         const name = value.contacts?.find((c: any) => c.wa_id === msg.from)?.profile?.name ?? ''
         const body = textOf(msg)
         try {
-          const { data: replyIds, error } = await db.rpc('handle_incoming', {
+          const { data: r, error } = await db.rpc('receive_message', {
             p_phone: msg.from,
             p_name: name,
             p_body: body,
             p_channel: 'whatsapp',
           })
           if (error) throw error
-          for (const id of replyIds ?? []) await sendMessage(id)
+          for (const id of r?.replies ?? []) await sendMessage(id)
+          // IA ligada: a função ai-reply responde (e envia pelo WhatsApp)
+          if (r?.ask_ai) {
+            await fetch(`${env('SUPABASE_URL')}/functions/v1/ai-reply`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-internal-secret': env('INTERNAL_SECRET') },
+              body: JSON.stringify({ customer_id: r.customer_id }),
+            })
+          }
         } catch (err) {
           console.error('Erro a processar mensagem', err)
         }

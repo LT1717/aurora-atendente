@@ -45,10 +45,24 @@ export function signOut() {
 /* ---------------- Clínica ---------------- */
 
 export const getSettings = () =>
-  cached('settings', () => run(supabase.from('clinic_settings').select('*').eq('id', 1).maybeSingle()))
+  cached('settings', async () => {
+    const [cfg, ai] = await Promise.all([
+      run(supabase.from('clinic_settings').select('*').eq('id', 1).maybeSingle()),
+      supabase.from('ai_settings').select('enabled, daily_limit').eq('id', 1).maybeSingle(),
+    ])
+    return cfg && { ...cfg, ai_enabled: ai.data?.enabled ?? false, ai_daily_limit: ai.data?.daily_limit ?? 200 }
+  })
 
-export const saveSettings = (patch) =>
-  write(supabase.from('clinic_settings').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', 1))
+export async function saveSettings(patch) {
+  const { ai_enabled, ai_daily_limit, ...clinic } = patch
+  if (ai_enabled !== undefined || ai_daily_limit !== undefined) {
+    const ai = {}
+    if (ai_enabled !== undefined) ai.enabled = ai_enabled
+    if (ai_daily_limit !== undefined) ai.daily_limit = ai_daily_limit
+    await write(supabase.from('ai_settings').update(ai).eq('id', 1))
+  }
+  return write(supabase.from('clinic_settings').update({ ...clinic, updated_at: new Date().toISOString() }).eq('id', 1))
+}
 
 export const resetDemo = () => write(supabase.rpc('reset_demo_data'))
 
@@ -181,8 +195,24 @@ export async function sendHumanMessage(customer, body) {
 }
 
 /** Simulador: uma "cliente" escreve, e a mensagem segue o mesmo caminho do WhatsApp */
-export const simulateIncoming = (phone, name, body) =>
-  write(supabase.rpc('handle_incoming', { p_phone: phone, p_name: name, p_body: body, p_channel: 'simulador' }))
+export async function simulateIncoming(phone, name, body) {
+  const r = await write(
+    supabase.rpc('receive_message', { p_phone: phone, p_name: name, p_body: body, p_channel: 'simulador' }),
+  )
+  if (!r?.ask_ai) return { ok: true }
+  // IA ligada: pede a resposta à função ai-reply
+  const { data, error } = await supabase.functions.invoke('ai-reply', { body: { customer_id: r.customer_id } })
+  cache.clear()
+  if (error) return { ok: false, error: 'A IA não respondeu (função ai-reply não instalada ou sem chave).' }
+  return data?.ok === false ? { ok: false, error: data.error } : { ok: true }
+}
+
+/** Respostas da IA usadas hoje */
+export async function getAiUsageToday() {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+  const { data } = await supabase.from('ai_usage').select('replies').eq('day', today).maybeSingle()
+  return data?.replies ?? 0
+}
 
 /** Lembretes da véspera para um dia ("AAAA-MM-DD"). Devolve quantos foram criados. */
 export async function sendReminders(day) {

@@ -40,3 +40,8 @@ Painel de atendimento para clínicas: uma assistente com IA responde no WhatsApp
 - Página **Simulador**: qualquer visitante conversa com a clínica como se estivesse no WhatsApp; a conversa aparece no painel em tempo real.
 - `supabase/functions/whatsapp-webhook`: recebe as mensagens da WhatsApp Cloud API (Meta), valida a assinatura e responde.
 - `supabase/functions/whatsapp-send`: envia pelo WhatsApp as respostas da recepção e os lembretes.
+
+## Inteligência artificial
+
+- `supabase/04_ia.sql`: interruptor da IA, limite diário de respostas e encaminhamento das mensagens.
+- `supabase/functions/ai-reply`: a assistente com IA (Claude). Responde com base nos dados da clínica, consulta horários livres, cria agendamentos e passa para a recepção quando necessário.

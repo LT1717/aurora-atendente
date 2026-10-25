@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSettings, saveSettings } from '../lib/api'
+import { getAiUsageToday, getSettings, saveSettings } from '../lib/api'
 import { friendlyError } from '../lib/format'
 import { ErrorBox, Field, Loading, Switch, useToast } from '../components/ui'
 import Icon from '../components/Icon'
@@ -9,9 +9,11 @@ export default function Settings() {
   const [form, setForm] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [usage, setUsage] = useState(0)
 
   useEffect(() => {
     getSettings().then(setForm).catch((err) => setError(friendlyError(err)))
+    getAiUsageToday().then(setUsage).catch(() => {})
   }, [])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -28,6 +30,8 @@ export default function Settings() {
         welcome_message: form.welcome_message?.trim() || null,
         info_ia: form.info_ia?.trim() || null,
         bot_enabled: form.bot_enabled,
+        ai_enabled: !!form.ai_enabled,
+        ai_daily_limit: Math.max(0, Math.min(5000, Number(form.ai_daily_limit) || 0)),
       })
       toast('Configurações salvas.')
     } catch (err) {
@@ -66,6 +70,30 @@ export default function Settings() {
                 : 'Ninguém recebe resposta automática. Todas as mensagens ficam para a recepção.'}
             </p>
           </div>
+        </div>
+        <div className="switch-row big ai-row">
+          <Switch
+            checked={!!form.ai_enabled}
+            onChange={(v) => setForm((f) => ({ ...f, ai_enabled: v }))}
+            label="Inteligência artificial ligada"
+          />
+          <div className="ai-row-text">
+            <strong>{form.ai_enabled ? 'Inteligência artificial ligada' : 'Inteligência artificial desligada'}</strong>
+            <p className="muted small">
+              {form.ai_enabled
+                ? 'A IA responde a qualquer pergunta com base no texto abaixo e agenda sozinha nos horários livres.'
+                : 'A assistente usa respostas automáticas por palavras-chave (preços, endereço, horários).'}
+            </p>
+          </div>
+          <Field label="Limite de respostas da IA por dia" hint={`Hoje: ${usage} de ${form.ai_daily_limit ?? 200}`}>
+            <input
+              type="number"
+              min={0}
+              max={5000}
+              value={form.ai_daily_limit ?? 200}
+              onChange={(e) => setForm((f) => ({ ...f, ai_daily_limit: e.target.value }))}
+            />
+          </Field>
         </div>
       </section>
 
