@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { listConversations, listMessages, sendHumanMessage, setBotPaused, subscribeToChanges } from '../lib/api'
 import { dayKey, fmtPhone, fmtRelativeDay, fmtTime, fmtWhen, friendlyError } from '../lib/format'
 import { Avatar, Badge, Empty, ErrorBox, Loading, useToast } from '../components/ui'
@@ -70,7 +70,8 @@ export default function Conversations() {
     if (!text) return
     setSending(true)
     try {
-      await sendHumanMessage(current.id, text)
+      const result = await sendHumanMessage(current, text)
+      if (!result.ok) toast(result.error, 'danger')
       setDraft('')
       loadThread()
       loadList()
@@ -85,9 +86,12 @@ export default function Conversations() {
     <div className="page page-full">
       <header className="page-head">
         <div>
-          <p className="page-date">WhatsApp</p>
+          <p className="page-date">WhatsApp e simulador</p>
           <h1>Conversas</h1>
         </div>
+        <Link to="/simulador" className="btn btn-ghost">
+          <Icon name="phone" /> Abrir simulador
+        </Link>
       </header>
       <ErrorBox>{error}</ErrorBox>
 
@@ -148,7 +152,9 @@ export default function Conversations() {
                 <Avatar name={current.name} />
                 <div className="thread-who">
                   <strong>{current.name || 'Sem nome'}</strong>
-                  <span>{fmtPhone(current.phone)}</span>
+                  <span>
+                    {fmtPhone(current.phone)} · {current.channel === 'whatsapp' ? 'WhatsApp' : 'Simulador'}
+                  </span>
                 </div>
                 <div className="thread-status">
                   {current.needs_human && <Badge tone="danger">Pediu atendente</Badge>}
@@ -174,7 +180,12 @@ export default function Conversations() {
                             <div className="bubble">
                               {m.sender !== 'cliente' && <span className="bubble-author">{SENDER[m.sender]}</span>}
                               <p>{m.body}</p>
-                              <time>{fmtTime(m.created_at)}</time>
+                              <time>
+                                {fmtTime(m.created_at)}
+                                {m.status === 'enviada' && ' ✓'}
+                                {m.status === 'falhou' && ' · não enviada'}
+                              </time>
+                              {m.status === 'falhou' && m.error && <span className="bubble-error">{m.error}</span>}
                             </div>
                           </div>
                         </li>

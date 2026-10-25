@@ -1,3 +1,14 @@
+-- =====================================================================
+--  Clínica Aurora Estética — Atendente IA
+--  FICHEIRO 2 de 2: DADOS DE EXEMPLO (todos fictícios)
+--  Cola tudo no SQL Editor do Supabase e carrega em "Run".
+--
+--  Cria a função reset_demo_data(), que APAGA tudo e volta a pôr
+--  os dados de exemplo, com datas à volta do dia de hoje.
+--  Podes correr este ficheiro as vezes que quiseres.
+--  O botão "Repor dados de demonstração" do painel usa a mesma função.
+-- =====================================================================
+
 create or replace function public.reset_demo_data()
 returns void
 language plpgsql

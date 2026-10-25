@@ -7,6 +7,7 @@ const NAV = [
   { to: '/', label: 'Visão geral', icon: 'home', end: true },
   { to: '/agenda', label: 'Agenda', icon: 'calendar' },
   { to: '/conversas', label: 'Conversas', icon: 'chat', badge: true },
+  { to: '/simulador', label: 'Simulador', icon: 'phone' },
   { to: '/clientes', label: 'Clientes', icon: 'users' },
   { to: '/servicos', label: 'Serviços', icon: 'sparkles' },
   { to: '/horarios', label: 'Horários', icon: 'clock' },

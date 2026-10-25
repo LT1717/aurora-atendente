@@ -1,4 +1,13 @@
+-- =====================================================================
+--  Clínica Aurora Estética — Atendente IA
+--  FICHEIRO 1 de 2: ESTRUTURA DA BASE DE DADOS
+--  Cola tudo no SQL Editor do Supabase e carrega em "Run". Corre só 1 vez.
+-- =====================================================================
 
+-- ---------------------------------------------------------------------
+-- 1. CONFIGURAÇÃO DA CLÍNICA (uma única linha)
+--    O campo "info_ia" é o texto que a IA vai usar para responder.
+-- ---------------------------------------------------------------------
 create table if not exists public.clinic_settings (
   id                 int primary key default 1 check (id = 1),
   name               text not null,
@@ -13,7 +22,7 @@ create table if not exists public.clinic_settings (
 );
 
 -- ---------------------------------------------------------------------
--- 1. SERVIÇOS
+-- 2. SERVIÇOS
 -- ---------------------------------------------------------------------
 create table if not exists public.services (
   id            uuid primary key default gen_random_uuid(),
@@ -26,7 +35,7 @@ create table if not exists public.services (
 );
 
 -- ---------------------------------------------------------------------
--- 2. HORÁRIO DE FUNCIONAMENTO (0 = domingo ... 6 = sábado)
+-- 3. HORÁRIO DE FUNCIONAMENTO (0 = domingo ... 6 = sábado)
 -- ---------------------------------------------------------------------
 create table if not exists public.business_hours (
   weekday      int primary key check (weekday between 0 and 6),
@@ -40,7 +49,7 @@ create table if not exists public.business_hours (
 );
 
 -- ---------------------------------------------------------------------
--- 3. DIAS BLOQUEADOS (feriados, folgas)
+-- 4. DIAS BLOQUEADOS (feriados, folgas)
 -- ---------------------------------------------------------------------
 create table if not exists public.blocked_dates (
   id      uuid primary key default gen_random_uuid(),
@@ -49,7 +58,7 @@ create table if not exists public.blocked_dates (
 );
 
 -- ---------------------------------------------------------------------
--- 4. CLIENTES / CONTACTOS
+-- 5. CLIENTES / CONTACTOS
 --    bot_paused = true -> a IA deixa de responder a este contacto
 --    stage      -> etapas do mini-CRM (extra)
 -- ---------------------------------------------------------------------
@@ -66,7 +75,7 @@ create table if not exists public.customers (
 );
 
 -- ---------------------------------------------------------------------
--- 5. MARCAÇÕES
+-- 6. MARCAÇÕES
 --    A regra "exclude" impede DUAS marcações no mesmo horário,
 --    mesmo que a IA tente. A base de dados recusa.
 -- ---------------------------------------------------------------------
@@ -93,7 +102,7 @@ create index if not exists appointments_starts_at_idx on public.appointments (st
 create index if not exists appointments_customer_idx  on public.appointments (customer_id);
 
 -- ---------------------------------------------------------------------
--- 6. MENSAGENS (conversas do WhatsApp e do simulador)
+-- 7. MENSAGENS (conversas do WhatsApp e do simulador)
 --    sender: cliente | bot | humano
 -- ---------------------------------------------------------------------
 create table if not exists public.messages (
@@ -128,7 +137,7 @@ after insert on public.messages
 for each row execute function public.touch_customer_last_message();
 
 -- ---------------------------------------------------------------------
--- 7. HORÁRIOS DISPONÍVEIS
+-- 8. HORÁRIOS DISPONÍVEIS
 --    Devolve os horários livres de um serviço num dia.
 --    O painel usa-a agora; a IA vai usar exatamente a mesma na fase B.
 -- ---------------------------------------------------------------------
@@ -179,7 +188,7 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------
--- 8. SEGURANÇA (RLS)
+-- 9. SEGURANÇA (RLS)
 --    Ninguém sem login vê ou altera nada.
 --    Só utilizadores com login (a equipa da clínica) têm acesso.
 -- ---------------------------------------------------------------------
@@ -208,7 +217,7 @@ revoke execute on function public.available_slots(uuid, date) from public, anon;
 grant  execute on function public.available_slots(uuid, date) to authenticated;
 
 -- ---------------------------------------------------------------------
--- 9. TEMPO REAL (as conversas atualizam sozinhas no painel)
+-- 10. TEMPO REAL (as conversas atualizam sozinhas no painel)
 -- ---------------------------------------------------------------------
 do $$
 begin
@@ -228,4 +237,4 @@ begin
   end if;
 end $$;
 
-
+-- Fim do ficheiro 1. Agora corre o ficheiro 2 (dados de exemplo).

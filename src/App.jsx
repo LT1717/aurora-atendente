@@ -11,6 +11,7 @@ import Customers from './pages/Customers'
 import Services from './pages/Services'
 import Hours from './pages/Hours'
 import Settings from './pages/Settings'
+import Simulator from './pages/Simulator'
 
 export default function App() {
   const [session, setSession] = useState(undefined) // undefined = ainda a verificar
@@ -32,6 +33,7 @@ export default function App() {
         <Route index element={<Overview />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="conversas" element={<Conversations />} />
+        <Route path="simulador" element={<Simulator />} />
         <Route path="clientes" element={<Customers />} />
         <Route path="servicos" element={<Services />} />
         <Route path="horarios" element={<Hours />} />

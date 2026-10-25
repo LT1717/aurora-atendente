@@ -99,6 +99,9 @@ export function saveCustomer(customer) {
     : write(supabase.from('customers').insert(fields).select().single())
 }
 
+export const getCustomerByPhone = (phone) =>
+  run(supabase.from('customers').select('*').eq('phone', phone).maybeSingle())
+
 export const deleteCustomer = (id) => write(supabase.from('customers').delete().eq('id', id))
 
 /* ---------------- Agendamentos ---------------- */
@@ -135,7 +138,7 @@ export const listConversations = () =>
     run(
       supabase
         .from('customers')
-        .select('id, name, phone, bot_paused, needs_human, last_message_at, messages(body, sender, created_at)')
+        .select('id, name, phone, channel, bot_paused, needs_human, last_message_at, messages(body, sender, created_at)')
         .not('last_message_at', 'is', null)
         .order('last_message_at', { ascending: false })
         .order('created_at', { referencedTable: 'messages', ascending: false })
@@ -148,8 +151,46 @@ export const listMessages = (customerId) =>
     run(supabase.from('messages').select('*').eq('customer_id', customerId).order('created_at')),
   )
 
-export const sendHumanMessage = (customerId, body) =>
-  write(supabase.from('messages').insert({ customer_id: customerId, sender: 'humano', body }))
+/** Pede à Edge Function que envie pelo WhatsApp as mensagens indicadas */
+async function deliver(messageIds) {
+  if (!messageIds.length) return { ok: true }
+  const { data, error } = await supabase.functions.invoke('whatsapp-send', { body: { message_ids: messageIds } })
+  cache.clear()
+  if (error) return { ok: false, error: 'A mensagem ficou guardada, mas não foi enviada pelo WhatsApp (função ainda não configurada).' }
+  const failed = (data?.results || []).find((r) => !r.ok)
+  return failed ? { ok: false, error: failed.error } : { ok: true }
+}
+
+/** Resposta da recepção. Nas conversas reais do WhatsApp, também é enviada. */
+export async function sendHumanMessage(customer, body) {
+  const whatsapp = customer.channel === 'whatsapp'
+  const row = await write(
+    supabase
+      .from('messages')
+      .insert({
+        customer_id: customer.id,
+        sender: 'humano',
+        body,
+        channel: customer.channel || 'simulador',
+        status: whatsapp ? 'pendente' : 'simulada',
+      })
+      .select('id')
+      .single(),
+  )
+  return whatsapp ? deliver([row.id]) : { ok: true }
+}
+
+/** Simulador: uma "cliente" escreve, e a mensagem segue o mesmo caminho do WhatsApp */
+export const simulateIncoming = (phone, name, body) =>
+  write(supabase.rpc('handle_incoming', { p_phone: phone, p_name: name, p_body: body, p_channel: 'simulador' }))
+
+/** Lembretes da véspera para um dia ("AAAA-MM-DD"). Devolve quantos foram criados. */
+export async function sendReminders(day) {
+  const rows = await write(supabase.rpc('send_reminders', { p_day: day }))
+  const real = (rows || []).filter((r) => r.channel === 'whatsapp').map((r) => r.message_id)
+  const result = await deliver(real)
+  return { count: (rows || []).length, ...result }
+}
 
 /** Pausar o bot = a recepção assume a conversa */
 export const setBotPaused = (customerId, paused) =>

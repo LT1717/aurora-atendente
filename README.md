@@ -33,3 +33,10 @@ Painel de atendimento para clínicas: uma assistente com IA responde no WhatsApp
 2. Copie `.env.example` para `.env` e preencha com a URL e a chave pública do seu projeto.
 3. `npm install`
 4. `npm run dev`
+
+## WhatsApp e simulador
+
+- `supabase/03_whatsapp.sql`: respostas automáticas (preços, endereço, horários, boas-vindas), pedido de atendente com pausa do bot, lembretes da véspera e confirmação com "1".
+- Página **Simulador**: qualquer visitante conversa com a clínica como se estivesse no WhatsApp; a conversa aparece no painel em tempo real.
+- `supabase/functions/whatsapp-webhook`: recebe as mensagens da WhatsApp Cloud API (Meta), valida a assinatura e responde.
+- `supabase/functions/whatsapp-send`: envia pelo WhatsApp as respostas da recepção e os lembretes.

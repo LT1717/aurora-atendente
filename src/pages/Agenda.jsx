@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { listAppointments, listBlocked, listHours, setAppointmentStatus } from '../lib/api'
+import { listAppointments, listBlocked, listHours, sendReminders, setAppointmentStatus } from '../lib/api'
 import {
   STATUS, WEEKDAYS, addDays, dayKey, dayRange, fmtDateTime, fmtPhone, fmtRelativeDay, fmtShortDate,
   fmtTime, fmtWeekdayShort, friendlyError, money, todayKey, weekdayOf,
@@ -24,6 +24,7 @@ export default function Agenda() {
   const [blocked, setBlocked] = useState([])
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
+  const [reminding, setReminding] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -54,7 +55,22 @@ export default function Agenda() {
     }
   }
 
+  async function remind() {
+    setReminding(true)
+    try {
+      const r = await sendReminders(day)
+      if (!r.ok) toast(r.error, 'danger')
+      else toast(r.count ? `${r.count} lembrete(s) enviado(s). Veja em Conversas.` : 'Todos já tinham recebido o lembrete.')
+      load()
+    } catch (err) {
+      toast(friendlyError(err), 'danger')
+    } finally {
+      setReminding(false)
+    }
+  }
+
   const dayAppts = (appts || []).filter((a) => dayKey(a.starts_at) === day)
+  const pendingReminders = dayAppts.filter((a) => a.status === 'marcado' && !a.reminder_sent_at).length
   const hoursOfDay = hours.find((h) => h.weekday === weekdayOf(day))
   const blockedDay = blocked.find((b) => b.day === day)
   const closed = blockedDay || (hoursOfDay && !hoursOfDay.is_open)
@@ -108,6 +124,11 @@ export default function Agenda() {
           <h2>
             {WEEKDAYS[weekdayOf(day)]}, {fmtShortDate(day)}
           </h2>
+          {day > todayKey() && pendingReminders > 0 && (
+            <button className="btn btn-soft btn-sm" onClick={remind} disabled={reminding}>
+              <Icon name="bell" /> {reminding ? 'Enviando…' : `Enviar lembretes (${pendingReminders})`}
+            </button>
+          )}
           {hoursOfDay && !closed && (
             <span className="muted small">
               Aberto {hoursOfDay.open_time.slice(0, 5)}–{hoursOfDay.close_time.slice(0, 5)}
