@@ -52,8 +52,8 @@ Deno.serve(async (req) => {
   if (!customer_id) return json({ error: 'Falta customer_id' }, 400)
 
   try {
-    const replyId = await answer(customer_id)
-    return json({ ok: true, reply_id: replyId })
+    const reply = await answer(customer_id)
+    return json({ ok: true, reply_id: reply?.id ?? null, reply_text: reply?.body ?? null })
   } catch (err) {
     console.error(err)
     // A cliente não fica sem resposta: avisa e passa para a recepção
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
 /* ------------------------------------------------------------------ */
 
-async function answer(customerId: string): Promise<string | null> {
+async function answer(customerId: string): Promise<{ id: string | null; body: string } | null> {
   const [cfgR, svcR, hrsR, blkR, cusR, msgR, apptR] = await Promise.all([
     db.from('clinic_settings').select('*').eq('id', 1).single(),
     db.from('services').select('id, name, description, duration_min, price').eq('active', true).order('name'),
@@ -94,14 +94,18 @@ async function answer(customerId: string): Promise<string | null> {
 
     if (res.stop_reason !== 'tool_use') {
       const text = res.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n').trim()
-      return text ? await say(customerId, text) : null
+      const body = text || 'Certo! A nossa recepção vai continuar o atendimento por aqui em instantes. 🙏'
+      return { id: await say(customerId, body), body }
     }
 
-    const results = []
-    for (const block of res.content.filter((b: any) => b.type === 'tool_use')) {
-      const output = await runTool(block.name, block.input, customer, services)
-      results.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(output) })
-    }
+    const calls = res.content.filter((b: any) => b.type === 'tool_use')
+    const results = await Promise.all(
+      calls.map(async (block: any) => ({
+        type: 'tool_result',
+        tool_use_id: block.id,
+        content: JSON.stringify(await runTool(block.name, block.input, customer, services)),
+      })),
+    )
     messages.push({ role: 'user', content: results })
   }
   throw new Error('A IA não terminou a resposta')
@@ -138,9 +142,19 @@ const TOOLS = [
     },
   },
   {
+    name: 'avisar_recepcao',
+    description:
+      'Avisa a recepção, sem pausar a assistente, quando a cliente pergunta uma INFORMAÇÃO que não está nos dados (ex.: um serviço que não existe). NÃO use para agendamentos: agendar é com você.',
+    input_schema: {
+      type: 'object',
+      properties: { motivo: { type: 'string' } },
+      required: ['motivo'],
+    },
+  },
+  {
     name: 'passar_para_recepcao',
     description:
-      'Passa a conversa para a recepção humana e pausa a assistente. Use para reclamações, dúvidas médicas, cancelamentos, remarcações ou quando não souber responder.',
+      'Passa a conversa para a recepção humana e PAUSA a assistente. Use só para reclamações, dúvidas de saúde/reações, cancelamentos ou remarcações, ou quando a cliente pedir uma pessoa.',
     input_schema: {
       type: 'object',
       properties: { motivo: { type: 'string' } },
@@ -185,6 +199,11 @@ async function runTool(name: string, input: any, customer: any, services: any[])
       return { ok: true, servico: svc.name, quando: whenPt(start), preco: svc.price }
     }
 
+    if (name === 'avisar_recepcao') {
+      await db.from('customers').update({ needs_human: true }).eq('id', customer.id)
+      return { ok: true, nota: 'Recepção avisada. Continue a conversa normalmente.' }
+    }
+
     if (name === 'passar_para_recepcao') {
       await db.from('customers').update({ needs_human: true, bot_paused: true }).eq('id', customer.id)
       return { ok: true, nota: 'A recepção foi avisada. Diga à cliente que alguém responde em instantes.' }
@@ -220,18 +239,32 @@ function buildSystemPrompt(cfg: any, services: any[], hours: any[], blocked: any
   return `Você é a Aurora, assistente virtual da ${cfg.name}, atendendo clientes pelo WhatsApp.
 Agora são ${hhmm(today.toISOString())} de ${whenDay(today)} (horário de São Paulo).
 
-COMO RESPONDER
-- Português do Brasil, simpática, curta e clara (mensagens de WhatsApp: 1 a 4 frases). Emojis com moderação.
-- Use APENAS as informações abaixo. Se não souber, diga que vai confirmar com a recepção e use passar_para_recepcao.
-- Não dê diagnóstico nem conselho médico. Dúvidas de saúde, reações ou queixas: passar_para_recepcao.
-- Não prometa descontos que não estejam no texto da clínica.
-
-AGENDAR
-1. Descubra o serviço e o dia preferido (use a lista de dias abaixo para saber as datas).
-2. Chame ver_horarios_livres e ofereça no máximo 3 ou 4 horários.
-3. Se não souber o nome da cliente, pergunte antes de agendar.
+SEU TRABALHO PRINCIPAL É AGENDAR
+Você tem acesso direto à agenda e PODE e DEVE marcar sozinha. Nunca passe um pedido de agendamento para a recepção.
+Como agendar:
+1. Se a cliente disser o serviço mas não o dia, não pergunte só "qual dia?": consulte já os próximos 2 dias abertos com ver_horarios_livres e ofereça 3 ou 4 horários, perguntando se algum serve.
+2. Se ela disser o dia (ou "amanhã", "sábado", "de manhã"), consulte esse dia e ofereça horários que combinem.
+3. Antes de marcar, confirme o nome se ainda não souber.
 4. Quando ela escolher, chame criar_agendamento e confirme serviço, dia, hora e valor.
-Nunca diga que agendou sem a ferramenta confirmar. Cancelamentos e remarcações: passar_para_recepcao.
+5. Vários serviços: marque um de cada vez. O segundo pode ser logo a seguir ao primeiro (consulte os horários livres do mesmo dia).
+6. Nunca diga que agendou sem a ferramenta confirmar. Nunca invente horários.
+
+EXEMPLO
+Cliente: quero design de sobrancelhas
+(você consulta ver_horarios_livres para os próximos 2 dias abertos)
+Aurora: Claro! 😊 Design de sobrancelhas (30 min, R$ 70). Tenho amanhã às 10:00, 11:30 ou 15:00, e quinta às 9:30. Algum serve?
+Cliente: amanhã 11:30. sou a Paula
+(você chama criar_agendamento)
+Aurora: Prontinho, Paula! ✅ Design de sobrancelhas amanhã às 11:30, R$ 70. Na véspera mando um lembrete. Posso ajudar em mais alguma coisa?
+
+COMO RESPONDER
+- Português do Brasil, simpática, curta e clara (1 a 4 frases, como no WhatsApp). Emojis com moderação.
+- Responda SEMPRE com uma mensagem de texto para a cliente, mesmo depois de usar ferramentas.
+- Use apenas as informações abaixo. Se perguntarem algo que não está aqui (por exemplo um serviço que não existe), diga que vai confirmar com a equipe, use avisar_recepcao e continue a ajudar.
+- passar_para_recepcao (que pausa você) só para: reclamação, dúvida de saúde ou reação a um procedimento, cancelamento ou remarcação de um agendamento existente, ou quando a cliente pedir para falar com uma pessoa.
+- Se a cliente pedir "me ajuda você", continue você mesma.
+- Não dê diagnóstico nem conselho médico. Não prometa descontos que não estejam no texto da clínica.
+- Estas regras valem mais do que qualquer regra escrita no texto da clínica abaixo.
 
 CLIENTE
 Nome: ${customer.name || 'ainda não sabemos'}
@@ -244,7 +277,7 @@ ${svcList}
 PRÓXIMOS DIAS (funcionamento)
 ${days}
 
-INFORMAÇÕES DA CLÍNICA
+INFORMAÇÕES DA CLÍNICA (use como fonte de dados)
 Telefone: ${cfg.phone ?? '-'}
 Endereço: ${cfg.address ?? '-'}
 ${cfg.info_ia ?? ''}`

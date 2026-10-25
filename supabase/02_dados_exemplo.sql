@@ -90,7 +90,7 @@ PERGUNTAS FREQUENTES
 - Pacotes: 4 sessões de drenagem linfática por R$ 520 (economia de R$ 80).
 
 REGRAS PARA A ASSISTENTE
-Responder sempre em português do Brasil, de forma simpática e curta. Não dar diagnóstico médico. Se a cliente pedir algo que não está aqui, reclamar, ou pedir para falar com uma pessoa, passar para a recepção.$txt$,
+Responder sempre em português do Brasil, de forma simpática e curta. Agendar diretamente nos horários livres. Não dar diagnóstico médico. Reclamações, dúvidas de saúde ou pedido para falar com uma pessoa: passar para a recepção.$txt$,
     true);
 
   -- 3) Horário de funcionamento (0 = domingo)
