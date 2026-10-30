@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import Icon from './Icon'
+import LangSwitch from './LangSwitch'
+import { t } from '../lib/i18n'
 import { countWaitingHuman, prefetchAll, signOut, subscribeToChanges } from '../lib/api'
 
 const NAV = [
@@ -35,12 +37,12 @@ export default function Layout({ session }) {
   return (
     <div className={`shell ${menuOpen ? 'menu-open' : ''}`}>
       <header className="topbar">
-        <button className="icon-btn" onClick={() => setMenuOpen((v) => !v)} aria-label="Abrir menu">
+        <button className="icon-btn" onClick={() => setMenuOpen((v) => !v)} aria-label={t('Abrir menu')}>
           <Icon name="menu" />
         </button>
         <Brand />
         {waiting > 0 && (
-          <NavLink to="/conversas" className="topbar-alert" aria-label={`${waiting} conversas aguardando`}>
+          <NavLink to="/conversas" className="topbar-alert" aria-label={t('{n} conversas aguardando', { n: waiting })}>
             <Icon name="bell" />
             <span>{waiting}</span>
           </NavLink>
@@ -53,19 +55,20 @@ export default function Layout({ session }) {
           {NAV.map((item) => (
             <NavLink key={item.to} to={item.to} end={item.end} className="nav-link">
               <Icon name={item.icon} />
-              <span>{item.label}</span>
-              {item.badge && waiting > 0 && <span className="nav-badge" title="Aguardando atendente">{waiting}</span>}
+              <span>{t(item.label)}</span>
+              {item.badge && waiting > 0 && <span className="nav-badge" title={t('Aguardando atendente')}>{waiting}</span>}
             </NavLink>
           ))}
         </nav>
         <div className="sidebar-foot">
+          <LangSwitch className="on-dark" />
           <div className="who">
-            <span className="who-label">Conectado como</span>
+            <span className="who-label">{t('Conectado como')}</span>
             <span className="who-email">{session?.user?.email}</span>
           </div>
           <button className="nav-link nav-logout" onClick={signOut}>
             <Icon name="logout" />
-            <span>Sair</span>
+            <span>{t('Sair')}</span>
           </button>
         </div>
       </aside>
@@ -87,7 +90,7 @@ export function Brand() {
       </svg>
       <div className="brand-text">
         <span className="brand-name">Aurora</span>
-        <span className="brand-sub">Clínica de estética</span>
+        <span className="brand-sub">{t('Clínica de estética')}</span>
       </div>
     </div>
   )

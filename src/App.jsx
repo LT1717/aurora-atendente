@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { configMissing, supabase } from './lib/supabase'
 import Layout from './components/Layout'
 import { Loading } from './components/ui'
+import { t } from './lib/i18n'
 import Login from './pages/Login'
 import Overview from './pages/Overview'
 import Agenda from './pages/Agenda'
@@ -24,7 +25,7 @@ export default function App() {
   }, [])
 
   if (configMissing) return <MissingConfig />
-  if (session === undefined) return <Loading label="Abrindo o painel…" />
+  if (session === undefined) return <Loading label={t('Abrindo o painel…')} />
   if (!session) return <Login />
 
   return (

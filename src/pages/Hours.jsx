@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { addBlocked, getSettings, listBlocked, listHours, removeBlocked, saveHours, saveSettings } from '../lib/api'
-import { WEEKDAYS, fmtLongDate, friendlyError, todayKey } from '../lib/format'
+import { weekdayName, fmtLongDate, friendlyError, todayKey } from '../lib/format'
 import { Empty, ErrorBox, Field, Loading, Switch, useToast } from '../components/ui'
 import Icon from '../components/Icon'
+import { getLang, t } from '../lib/i18n'
 
 // Segunda primeiro, domingo no fim
 const ORDER = [1, 2, 3, 4, 5, 6, 0]
@@ -45,9 +46,9 @@ export default function Hours() {
     // validações simples antes de gravar
     for (const r of hours) {
       if (!r.is_open) continue
-      if (r.close_time <= r.open_time) return setError(`${WEEKDAYS[r.weekday]}: o fechamento precisa ser depois da abertura.`)
-      if (!!r.break_start !== !!r.break_end) return setError(`${WEEKDAYS[r.weekday]}: preencha o início e o fim do intervalo, ou deixe os dois vazios.`)
-      if (r.break_start && r.break_end <= r.break_start) return setError(`${WEEKDAYS[r.weekday]}: o intervalo termina antes de começar.`)
+      if (r.close_time <= r.open_time) return setError(`${weekdayName(r.weekday)}: ${t('o fechamento precisa ser depois da abertura.')}`)
+      if (!!r.break_start !== !!r.break_end) return setError(`${weekdayName(r.weekday)}: ${t('preencha o início e o fim do intervalo, ou deixe os dois vazios.')}`)
+      if (r.break_start && r.break_end <= r.break_start) return setError(`${weekdayName(r.weekday)}: ${t('o intervalo termina antes de começar.')}`)
     }
     setBusy(true)
     setError('')
@@ -63,7 +64,7 @@ export default function Hours() {
         })),
       )
       await saveSettings({ slot_interval_min: Number(step) })
-      toast('Horários salvos.')
+      toast(t('Horários salvos.'))
     } catch (err) {
       setError(friendlyError(err))
     } finally {
@@ -78,7 +79,7 @@ export default function Hours() {
       await addBlocked(newDay, newReason.trim() || null)
       setNewDay('')
       setNewReason('')
-      toast('Dia bloqueado.')
+      toast(t('Dia bloqueado.'))
       load()
     } catch (err) {
       toast(friendlyError(err), 'danger')
@@ -88,7 +89,7 @@ export default function Hours() {
   async function unblock(b) {
     try {
       await removeBlocked(b.id)
-      toast('Dia desbloqueado.')
+      toast(t('Dia desbloqueado.'))
       load()
     } catch (err) {
       toast(friendlyError(err), 'danger')
@@ -103,76 +104,76 @@ export default function Hours() {
     <div className="page">
       <header className="page-head">
         <div>
-          <p className="page-date">A assistente só oferece horários dentro destes períodos</p>
-          <h1>Horários</h1>
+          <p className="page-date">{t('A assistente só oferece horários dentro destes períodos')}</p>
+          <h1>{t('Horários')}</h1>
         </div>
         <button className="btn btn-primary" onClick={save} disabled={busy}>
-          <Icon name="check" /> {busy ? 'Salvando…' : 'Salvar horários'}
+          <Icon name="check" /> {busy ? t('Salvando…') : t('Salvar horários')}
         </button>
       </header>
 
       <ErrorBox>{error}</ErrorBox>
 
       <section className="panel">
-        <header className="panel-head"><h2>Funcionamento semanal</h2></header>
+        <header className="panel-head"><h2>{t('Funcionamento semanal')}</h2></header>
         <div className="hours">
           {hours.map((r) => {
-            const day = WEEKDAYS[r.weekday]
+            const day = weekdayName(r.weekday)
             return (
               <div key={r.weekday} className={`hours-row ${r.is_open ? '' : 'is-off'}`}>
                 <div className="hours-day">
-                  <Switch checked={r.is_open} onChange={(v) => update(r.weekday, { is_open: v })} label={`${day} aberto`} />
+                  <Switch checked={r.is_open} onChange={(v) => update(r.weekday, { is_open: v })} label={`${day}: ${t('aberto')}`} />
                   <span>{day}</span>
                 </div>
                 {r.is_open ? (
                   <div className="hours-times">
                     <div className="time-pair">
-                      <span className="time-label">Atende</span>
-                      <TimeSelect value={r.open_time} onChange={(v) => update(r.weekday, { open_time: v })} label={`${day}: abre às`} />
-                      <span className="time-sep">às</span>
-                      <TimeSelect value={r.close_time} onChange={(v) => update(r.weekday, { close_time: v })} label={`${day}: fecha às`} />
+                      <span className="time-label">{t('Atende')}</span>
+                      <TimeSelect value={r.open_time} onChange={(v) => update(r.weekday, { open_time: v })} label={`${day}: ${t('abre às')}`} />
+                      <span className="time-sep">{getLang() === 'en' ? 'to' : 'às'}</span>
+                      <TimeSelect value={r.close_time} onChange={(v) => update(r.weekday, { close_time: v })} label={`${day}: ${t('fecha às')}`} />
                     </div>
                     <div className="time-pair">
-                      <span className="time-label">Intervalo</span>
-                      <TimeSelect value={r.break_start} onChange={(v) => update(r.weekday, { break_start: v })} label={`${day}: início do intervalo`} optional />
-                      <span className="time-sep">às</span>
-                      <TimeSelect value={r.break_end} onChange={(v) => update(r.weekday, { break_end: v })} label={`${day}: fim do intervalo`} optional />
+                      <span className="time-label">{t('Intervalo')}</span>
+                      <TimeSelect value={r.break_start} onChange={(v) => update(r.weekday, { break_start: v })} label={`${day}: ${t('início do intervalo')}`} optional />
+                      <span className="time-sep">{getLang() === 'en' ? 'to' : 'às'}</span>
+                      <TimeSelect value={r.break_end} onChange={(v) => update(r.weekday, { break_end: v })} label={`${day}: ${t('fim do intervalo')}`} optional />
                       {(r.break_start || r.break_end) && (
-                        <button type="button" className="icon-btn" onClick={() => update(r.weekday, { break_start: '', break_end: '' })} aria-label={`${day}: sem intervalo`} title="Sem intervalo">
+                        <button type="button" className="icon-btn" onClick={() => update(r.weekday, { break_start: '', break_end: '' })} aria-label={`${day}: ${t('Sem intervalo')}`} title={t('Sem intervalo')}>
                           <Icon name="x" size={16} />
                         </button>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <span className="muted">Fechado</span>
+                  <span className="muted">{t('Fechado')}</span>
                 )}
               </div>
             )
           })}
         </div>
         <div className="hours-step">
-          <Field label="Intervalo entre horários oferecidos" hint="Ex.: 30 min oferece 9:00, 9:30, 10:00…">
+          <Field label={t('Intervalo entre horários oferecidos')} hint={t('Ex.: 30 min oferece 9:00, 9:30, 10:00…')}>
             <select value={step} onChange={(e) => setStep(e.target.value)}>
-              {[15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m} minutos</option>)}
+              {[15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{t('{n} minutos', { n: m })}</option>)}
             </select>
           </Field>
         </div>
       </section>
 
       <section className="panel">
-        <header className="panel-head"><h2>Feriados e folgas</h2></header>
+        <header className="panel-head"><h2>{t('Feriados e folgas')}</h2></header>
         <form className="inline-form" onSubmit={addDay}>
-          <Field label="Dia">
+          <Field label={t('Dia')}>
             <input type="date" value={newDay} min={todayKey()} onChange={(e) => setNewDay(e.target.value)} required />
           </Field>
-          <Field label="Motivo (opcional)">
-            <input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Ex.: Feriado municipal" />
+          <Field label={t('Motivo (opcional)')}>
+            <input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder={t('Ex.: Feriado municipal')} />
           </Field>
-          <button className="btn btn-soft"><Icon name="plus" /> Bloquear dia</button>
+          <button className="btn btn-soft"><Icon name="plus" /> {t('Bloquear dia')}</button>
         </form>
         {upcoming.length === 0 ? (
-          <Empty icon="calendar" title="Nenhum dia bloqueado" />
+          <Empty icon="calendar" title={t('Nenhum dia bloqueado')} />
         ) : (
           <ul className="blocked-list">
             {upcoming.map((b) => (
@@ -181,7 +182,7 @@ export default function Hours() {
                   <strong>{fmtLongDate(b.day)}</strong>
                   {b.reason && <span className="muted"> · {b.reason}</span>}
                 </div>
-                <button className="icon-btn" onClick={() => unblock(b)} aria-label={`Desbloquear ${b.day}`}>
+                <button className="icon-btn" onClick={() => unblock(b)} aria-label={`${t('Desbloquear')} ${b.day}`}>
                   <Icon name="trash" />
                 </button>
               </li>

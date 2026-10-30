@@ -3,6 +3,7 @@ import { deleteService, listServices, saveService } from '../lib/api'
 import { friendlyError, money } from '../lib/format'
 import { Badge, Empty, ErrorBox, Field, Loading, Modal, Switch, useToast } from '../components/ui'
 import Icon from '../components/Icon'
+import { t } from '../lib/i18n'
 
 const BLANK = { name: '', description: '', duration_min: 60, price: 0, active: true }
 
@@ -25,7 +26,7 @@ export default function Services() {
   async function toggle(s) {
     try {
       await saveService({ id: s.id, active: !s.active })
-      toast(s.active ? 'Serviço desativado. A assistente deixa de oferecê-lo.' : 'Serviço ativado.')
+      toast(s.active ? t('Serviço desativado. A assistente deixa de oferecê-lo.') : t('Serviço ativado.'))
       load()
     } catch (err) {
       toast(friendlyError(err), 'danger')
@@ -33,10 +34,10 @@ export default function Services() {
   }
 
   async function remove(s) {
-    if (!confirm(`Excluir o serviço “${s.name}”?`)) return
+    if (!confirm(t('Excluir o serviço “{n}”?', { n: s.name }))) return
     try {
       await deleteService(s.id)
-      toast('Serviço excluído.')
+      toast(t('Serviço excluído.'))
       setEditing(null)
       load()
     } catch (err) {
@@ -48,11 +49,11 @@ export default function Services() {
     <div className="page">
       <header className="page-head">
         <div>
-          <p className="page-date">O que a assistente pode agendar</p>
-          <h1>Serviços</h1>
+          <p className="page-date">{t('O que a assistente pode agendar')}</p>
+          <h1>{t('Serviços')}</h1>
         </div>
         <button className="btn btn-primary" onClick={() => setEditing(BLANK)}>
-          <Icon name="plus" /> Novo serviço
+          <Icon name="plus" /> {t('Novo serviço')}
         </button>
       </header>
       <ErrorBox>{error}</ErrorBox>
@@ -61,16 +62,16 @@ export default function Services() {
         {!rows ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty icon="sparkles" title="Nenhum serviço cadastrado">Cadastre o primeiro para começar a agendar.</Empty>
+          <Empty icon="sparkles" title={t('Nenhum serviço cadastrado')}>{t('Cadastre o primeiro para começar a agendar.')}</Empty>
         ) : (
           <table className="table table-services">
             <thead>
               <tr>
-                <th>Serviço</th>
-                <th className="num">Duração</th>
-                <th className="num">Preço</th>
-                <th>Ativo</th>
-                <th><span className="sr-only">Ações</span></th>
+                <th>{t('Serviço')}</th>
+                <th className="num">{t('Duração')}</th>
+                <th className="num">{t('Preço')}</th>
+                <th>{t('Ativo')}</th>
+                <th><span className="sr-only">{t('Ações')}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -81,10 +82,10 @@ export default function Services() {
                     {s.description && <span className="muted small block">{s.description}</span>}
                   </td>
                   <td className="num nowrap">{s.duration_min} min</td>
-                  <td className="num nowrap">{Number(s.price) === 0 ? <Badge tone="ok">Gratuito</Badge> : money(s.price)}</td>
-                  <td onClick={(e) => e.stopPropagation()}><Switch checked={s.active} onChange={() => toggle(s)} label={`Ativar ${s.name}`} /></td>
+                  <td className="num nowrap">{Number(s.price) === 0 ? <Badge tone="ok">{t('Gratuito')}</Badge> : money(s.price)}</td>
+                  <td onClick={(e) => e.stopPropagation()}><Switch checked={s.active} onChange={() => toggle(s)} label={`${t('Ativar')} ${s.name}`} /></td>
                   <td className="actions">
-                    <button className="icon-btn" aria-label={`Editar ${s.name}`}><Icon name="edit" /></button>
+                    <button className="icon-btn" aria-label={`${t('Editar')} ${s.name}`}><Icon name="edit" /></button>
                   </td>
                 </tr>
               ))}
@@ -100,7 +101,7 @@ export default function Services() {
           onDelete={() => remove(editing)}
           onSaved={() => {
             setEditing(null)
-            toast('Serviço salvo.')
+            toast(t('Serviço salvo.'))
             load()
           }}
         />
@@ -136,31 +137,31 @@ function ServiceForm({ service, onClose, onSaved, onDelete }) {
 
   return (
     <Modal
-      title={form.id ? 'Editar serviço' : 'Novo serviço'}
+      title={form.id ? t('Editar serviço') : t('Novo serviço')}
       onClose={onClose}
       footer={
         <>
           {form.id && (
             <button type="button" className="btn btn-danger-ghost push-left" onClick={onDelete}>
-              <Icon name="trash" /> Excluir
+              <Icon name="trash" /> {t('Excluir')}
             </button>
           )}
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn btn-primary" form="service-form" disabled={busy}>{busy ? 'Salvando…' : 'Salvar'}</button>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>{t('Cancelar')}</button>
+          <button className="btn btn-primary" form="service-form" disabled={busy}>{busy ? t('Salvando…') : t('Salvar')}</button>
         </>
       }
     >
       <form id="service-form" className="form-grid" onSubmit={save}>
-        <Field label="Nome" className="span-2">
+        <Field label={t('Nome')} className="span-2">
           <input value={form.name} onChange={set('name')} required />
         </Field>
-        <Field label="Descrição" hint="A assistente usa este texto para explicar o serviço." className="span-2">
+        <Field label={t('Descrição')} hint={t('A assistente usa este texto para explicar o serviço.')} className="span-2">
           <textarea rows={2} value={form.description || ''} onChange={set('description')} />
         </Field>
-        <Field label="Duração (minutos)">
+        <Field label={t('Duração (minutos)')}>
           <input type="number" min={5} max={480} step={5} value={form.duration_min} onChange={set('duration_min')} required />
         </Field>
-        <Field label="Preço (R$)">
+        <Field label={t('Preço (R$)')}>
           <input inputMode="decimal" value={form.price} onChange={set('price')} required />
         </Field>
         <div className="span-2"><ErrorBox>{error}</ErrorBox></div>

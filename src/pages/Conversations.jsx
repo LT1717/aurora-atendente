@@ -4,6 +4,7 @@ import { listConversations, listMessages, sendHumanMessage, setBotPaused, subscr
 import { dayKey, fmtPhone, fmtRelativeDay, fmtTime, fmtWhen, friendlyError } from '../lib/format'
 import { Avatar, Badge, Empty, ErrorBox, Loading, useToast } from '../components/ui'
 import Icon from '../components/Icon'
+import { t } from '../lib/i18n'
 
 const SENDER = { cliente: 'Cliente', bot: 'Aurora · assistente IA', humano: 'Recepção' }
 
@@ -57,7 +58,7 @@ export default function Conversations() {
   async function toggleBot() {
     try {
       await setBotPaused(current.id, !current.bot_paused)
-      toast(current.bot_paused ? 'A assistente voltou a responder esta conversa.' : 'Você assumiu a conversa. A assistente está pausada.')
+      toast(current.bot_paused ? t('A assistente voltou a responder esta conversa.') : t('Você assumiu a conversa. A assistente está pausada.'))
       loadList()
     } catch (err) {
       toast(friendlyError(err), 'danger')
@@ -86,21 +87,21 @@ export default function Conversations() {
     <div className="page page-full">
       <header className="page-head">
         <div>
-          <p className="page-date">WhatsApp e simulador</p>
-          <h1>Conversas</h1>
+          <p className="page-date">{t('WhatsApp e simulador')}</p>
+          <h1>{t('Conversas')}</h1>
         </div>
         <Link to="/simulador" className="btn btn-ghost">
-          <Icon name="phone" /> Abrir simulador
+          <Icon name="phone" /> {t('Abrir simulador')}
         </Link>
       </header>
       <ErrorBox>{error}</ErrorBox>
 
       <div className={`chat ${selectedId ? 'has-thread' : ''}`}>
-        <aside className="chat-list" aria-label="Conversas">
+        <aside className="chat-list" aria-label={t('Conversas')}>
           {!convs ? (
             <Loading />
           ) : convs.length === 0 ? (
-            <Empty icon="chat" title="Nenhuma conversa ainda">As mensagens do WhatsApp aparecem aqui.</Empty>
+            <Empty icon="chat" title={t('Nenhuma conversa ainda')}>{t('As mensagens do WhatsApp aparecem aqui.')}</Empty>
           ) : (
             <ul>
               {convs.map((c) => {
@@ -124,9 +125,9 @@ export default function Conversations() {
                             {last?.body}
                           </span>
                           {c.needs_human ? (
-                            <span className="dot dot-danger" title="Aguardando a recepção" />
+                            <span className="dot dot-danger" title={t('Aguardando a recepção')} />
                           ) : c.bot_paused ? (
-                            <span className="dot dot-warn" title="Assistente pausada" />
+                            <span className="dot dot-warn" title={t('Assistente pausada')} />
                           ) : null}
                         </div>
                       </div>
@@ -140,29 +141,29 @@ export default function Conversations() {
 
         <section className="chat-thread">
           {!current ? (
-            <Empty icon="chat" title="Escolha uma conversa">
-              Aqui você vê o que a assistente respondeu e pode assumir o atendimento a qualquer momento.
+            <Empty icon="chat" title={t('Escolha uma conversa')}>
+              {t('Aqui você vê o que a assistente respondeu e pode assumir o atendimento a qualquer momento.')}
             </Empty>
           ) : (
             <>
               <header className="thread-head">
-                <button className="icon-btn thread-back" onClick={() => setParams({})} aria-label="Voltar à lista">
+                <button className="icon-btn thread-back" onClick={() => setParams({})} aria-label={t('Voltar à lista')}>
                   <Icon name="left" />
                 </button>
                 <Avatar name={current.name} />
                 <div className="thread-who">
-                  <strong>{current.name || 'Sem nome'}</strong>
+                  <strong>{current.name || t('Sem nome')}</strong>
                   <span>
-                    {fmtPhone(current.phone)} · {current.channel === 'whatsapp' ? 'WhatsApp' : 'Simulador'}
+                    {fmtPhone(current.phone)} · {current.channel === 'whatsapp' ? 'WhatsApp' : t('Simulador')}
                   </span>
                 </div>
                 <div className="thread-status">
-                  {current.needs_human && <Badge tone="danger">Pediu atendente</Badge>}
-                  {current.bot_paused ? <Badge tone="warn">Assistente pausada</Badge> : <Badge tone="ok">Assistente ativa</Badge>}
+                  {current.needs_human && <Badge tone="danger">{t('Pediu atendente')}</Badge>}
+                  {current.bot_paused ? <Badge tone="warn">{t('Assistente pausada')}</Badge> : <Badge tone="ok">{t('Assistente ativa')}</Badge>}
                 </div>
                 <button className={`btn ${current.bot_paused ? 'btn-soft' : 'btn-primary'}`} onClick={toggleBot}>
                   <Icon name={current.bot_paused ? 'bot' : 'hand'} />
-                  {current.bot_paused ? 'Devolver à assistente' : 'Assumir conversa'}
+                  {current.bot_paused ? t('Devolver à assistente') : t('Assumir conversa')}
                 </button>
               </header>
 
@@ -178,12 +179,12 @@ export default function Conversations() {
                           {showDay && <div className="day-sep">{fmtRelativeDay(dayKey(m.created_at))}</div>}
                           <div className={`bubble-row from-${m.sender}`}>
                             <div className="bubble">
-                              {m.sender !== 'cliente' && <span className="bubble-author">{SENDER[m.sender]}</span>}
+                              {m.sender !== 'cliente' && <span className="bubble-author">{t(SENDER[m.sender])}</span>}
                               <p>{m.body}</p>
                               <time>
                                 {fmtTime(m.created_at)}
                                 {m.status === 'enviada' && ' ✓'}
-                                {m.status === 'falhou' && ' · não enviada'}
+                                {m.status === 'falhou' && ` · ${t('não enviada')}`}
                               </time>
                               {m.status === 'falhou' && m.error && <span className="bubble-error">{m.error}</span>}
                             </div>
@@ -200,22 +201,22 @@ export default function Conversations() {
                 <form className="composer" onSubmit={send}>
                   <textarea
                     rows={1}
-                    placeholder="Responder como recepção…"
+                    placeholder={t('Responder como recepção…')}
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) send(e)
                     }}
-                    aria-label="Mensagem"
+                    aria-label={t('Mensagem')}
                   />
-                  <button className="btn btn-primary" disabled={sending || !draft.trim()} aria-label="Enviar">
+                  <button className="btn btn-primary" disabled={sending || !draft.trim()} aria-label={t('Enviar')}>
                     <Icon name="send" />
                   </button>
                 </form>
               ) : (
                 <div className="composer composer-locked">
                   <Icon name="bot" />
-                  <span>A assistente está respondendo. Clique em <strong>Assumir conversa</strong> para escrever.</span>
+                  <span>{t('A assistente está respondendo. Clique em')} <strong>{t('Assumir conversa')}</strong> {t('para escrever.')}</span>
                 </div>
               )}
             </>

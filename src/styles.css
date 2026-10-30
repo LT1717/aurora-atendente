@@ -527,7 +527,23 @@ legend { padding: 0; margin-bottom: 8px; }
 .login-points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; }
 .login-points li { display: flex; gap: 10px; align-items: flex-start; }
 .login-points .icon { color: var(--dawn); margin-top: 2px; }
-.login-form-wrap { display: grid; place-items: center; padding: 32px 20px; }
+.login-form-wrap { position: relative; display: grid; place-items: center; padding: 32px 20px; }
+.login-lang { position: absolute; top: 20px; right: 20px; }
+
+/* Botão de idioma PT | EN */
+.lang-switch {
+  display: inline-flex; padding: 3px; gap: 2px; align-self: flex-start;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
+}
+.lang-switch button {
+  border: 0; background: transparent; cursor: pointer;
+  min-width: 40px; height: 28px; padding: 0 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--muted);
+}
+.lang-switch button.is-active { background: var(--brand); color: #fff; }
+.lang-switch.on-dark { margin: 0 12px; background: transparent; border-color: rgba(255,255,255,.16); }
+.lang-switch.on-dark button { color: var(--sidebar-muted); }
+.lang-switch.on-dark button.is-active { background: var(--sidebar-ink); color: var(--sidebar); }
 .login-form { width: min(380px, 100%); display: flex; flex-direction: column; gap: 16px; }
 .login-form h1 { font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 1; }
 .demo-box {

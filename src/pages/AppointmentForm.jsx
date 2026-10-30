@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { availableSlots, createAppointment, listCustomers, listServices, saveCustomer } from '../lib/api'
 import { fmtPhone, fmtTime, friendlyError, money, normalizePhone, todayKey } from '../lib/format'
 import { ErrorBox, Field, Loading, Modal } from '../components/ui'
+import { t } from '../lib/i18n'
 
 export default function AppointmentForm({ initialDay, onClose, onSaved }) {
   const [customers, setCustomers] = useState(null)
@@ -56,10 +57,10 @@ export default function AppointmentForm({ initialDay, onClose, onSaved }) {
   async function save(e) {
     e.preventDefault()
     setError('')
-    if (mode === 'existing' && !customerId) return setError('Escolha um cliente.')
+    if (mode === 'existing' && !customerId) return setError(t('Escolha um cliente.'))
     if (mode === 'new' && (!newName.trim() || normalizePhone(newPhone).length < 12))
-      return setError('Preencha o nome e um telefone com DDD.')
-    if (!slot) return setError('Escolha um horário livre.')
+      return setError(t('Preencha o nome e um telefone com DDD.'))
+    if (!slot) return setError(t('Escolha um horário livre.'))
 
     setBusy(true)
     try {
@@ -87,14 +88,14 @@ export default function AppointmentForm({ initialDay, onClose, onSaved }) {
 
   return (
     <Modal
-      title="Novo agendamento"
+      title={t('Novo agendamento')}
       onClose={onClose}
       wide
       footer={
         <>
-          <button className="btn btn-ghost" onClick={onClose} type="button">Cancelar</button>
+          <button className="btn btn-ghost" onClick={onClose} type="button">{t('Cancelar')}</button>
           <button className="btn btn-primary" form="appt-form" disabled={busy}>
-            {busy ? 'Salvando…' : 'Agendar'}
+            {busy ? t('Salvando…') : t('Agendar')}
           </button>
         </>
       }
@@ -104,13 +105,13 @@ export default function AppointmentForm({ initialDay, onClose, onSaved }) {
       ) : (
         <form id="appt-form" className="form-grid" onSubmit={save}>
           <fieldset className="span-2">
-            <legend className="field-label">Cliente</legend>
+            <legend className="field-label">{t('Cliente')}</legend>
             <div className="segmented" role="tablist">
               <button type="button" className={mode === 'existing' ? 'is-active' : ''} onClick={() => setMode('existing')}>
-                Já é cliente
+                {t('Já é cliente')}
               </button>
               <button type="button" className={mode === 'new' ? 'is-active' : ''} onClick={() => setMode('new')}>
-                Cliente novo
+                {t('Cliente novo')}
               </button>
             </div>
 
@@ -118,12 +119,12 @@ export default function AppointmentForm({ initialDay, onClose, onSaved }) {
               <div className="picker">
                 <input
                   type="search"
-                  placeholder="Buscar por nome ou telefone"
+                  placeholder={t('Buscar por nome ou telefone')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  aria-label="Buscar cliente"
+                  aria-label={t('Buscar cliente')}
                 />
-                <ul className="picker-list" role="listbox" aria-label="Clientes">
+                <ul className="picker-list" role="listbox" aria-label={t('Clientes')}>
                   {filtered.map((c) => (
                     <li key={c.id}>
                       <button
@@ -133,29 +134,29 @@ export default function AppointmentForm({ initialDay, onClose, onSaved }) {
                         className={c.id === customerId ? 'is-active' : ''}
                         onClick={() => setCustomerId(c.id)}
                       >
-                        <strong>{c.name || 'Sem nome'}</strong>
+                        <strong>{c.name || t('Sem nome')}</strong>
                         <span>{fmtPhone(c.phone)}</span>
                       </button>
                     </li>
                   ))}
-                  {filtered.length === 0 && <li className="muted small picker-empty">Nenhum cliente encontrado.</li>}
+                  {filtered.length === 0 && <li className="muted small picker-empty">{t('Nenhum cliente encontrado.')}</li>}
                 </ul>
               </div>
             ) : (
               <div className="form-grid">
-                <Field label="Nome">
-                  <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome completo" />
+                <Field label={t('Nome')}>
+                  <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('Nome completo')} />
                 </Field>
-                <Field label="WhatsApp" hint="Com DDD, ex.: 11 98765-4321">
+                <Field label="WhatsApp" hint={t('Com DDD, ex.: 11 98765-4321')}>
                   <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} inputMode="tel" placeholder="11 98765-4321" />
                 </Field>
               </div>
             )}
           </fieldset>
 
-          <Field label="Serviço">
+          <Field label={t('Serviço')}>
             <select value={serviceId} onChange={(e) => setServiceId(e.target.value)} required>
-              <option value="">Escolha…</option>
+              <option value="">{t('Escolha…')}</option>
               {services.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} — {s.duration_min} min · {money(s.price)}
@@ -164,18 +165,18 @@ export default function AppointmentForm({ initialDay, onClose, onSaved }) {
             </select>
           </Field>
 
-          <Field label="Dia">
+          <Field label={t('Dia')}>
             <input type="date" value={day} min={todayKey()} onChange={(e) => setDay(e.target.value)} required />
           </Field>
 
           <div className="span-2">
-            <span className="field-label">Horários livres</span>
+            <span className="field-label">{t('Horários livres')}</span>
             {!serviceId ? (
-              <p className="muted small">Escolha o serviço para ver os horários livres.</p>
+              <p className="muted small">{t('Escolha o serviço para ver os horários livres.')}</p>
             ) : slots === 'loading' ? (
-              <Loading label="Buscando horários…" />
+              <Loading label={t('Buscando horários…')} />
             ) : slots?.length === 0 ? (
-              <p className="muted small">Sem horários livres neste dia. Tente outro dia.</p>
+              <p className="muted small">{t('Sem horários livres neste dia. Tente outro dia.')}</p>
             ) : (
               <div className="slots">
                 {slots?.map((s) => (
@@ -192,12 +193,12 @@ export default function AppointmentForm({ initialDay, onClose, onSaved }) {
             )}
             {service && slot && (
               <p className="small slot-summary">
-                {service.name}, das {fmtTime(slot.slot_start)} às {fmtTime(slot.slot_end)}.
+                {t('{s}, das {a} às {b}.', { s: service.name, a: fmtTime(slot.slot_start), b: fmtTime(slot.slot_end) })}
               </p>
             )}
           </div>
 
-          <Field label="Observações (opcional)" className="span-2">
+          <Field label={t('Observações (opcional)')} className="span-2">
             <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
 

@@ -2,6 +2,7 @@
 // As páginas nunca falam diretamente com o Supabase.
 import { supabase } from './supabase'
 import { addDays, dayRange, todayKey, weekdayOf } from './format'
+import { t } from './i18n'
 
 async function run(promise) {
   const { data, error } = await promise
@@ -170,7 +171,7 @@ async function deliver(messageIds) {
   if (!messageIds.length) return { ok: true }
   const { data, error } = await supabase.functions.invoke('whatsapp-send', { body: { message_ids: messageIds } })
   cache.clear()
-  if (error) return { ok: false, error: 'A mensagem ficou guardada, mas não foi enviada pelo WhatsApp (função ainda não configurada).' }
+  if (error) return { ok: false, error: t('A mensagem ficou guardada, mas não foi enviada pelo WhatsApp (função ainda não configurada).') }
   const failed = (data?.results || []).find((r) => !r.ok)
   return failed ? { ok: false, error: failed.error } : { ok: true }
 }
@@ -203,7 +204,7 @@ export async function simulateIncoming(phone, name, body) {
   // IA ligada: pede a resposta à função ai-reply
   const { data, error } = await supabase.functions.invoke('ai-reply', { body: { customer_id: r.customer_id } })
   cache.clear()
-  if (error) return { ok: false, error: 'A IA não respondeu (função ai-reply não instalada ou sem chave).' }
+  if (error) return { ok: false, error: t('A IA não respondeu (função ai-reply não instalada ou sem chave).') }
   return data?.ok === false ? { ok: false, error: data.error } : { ok: true, replyText: data?.reply_text }
 }
 

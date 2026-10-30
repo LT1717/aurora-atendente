@@ -7,6 +7,7 @@ import {
 } from '../lib/format'
 import { Avatar, Badge, Empty, ErrorBox, Loading, useToast } from '../components/ui'
 import Icon from '../components/Icon'
+import { t } from '../lib/i18n'
 
 const ACTIVE = ['marcado', 'confirmado']
 
@@ -33,12 +34,12 @@ export default function Overview() {
   }, [load])
 
   async function onReset() {
-    if (!confirm('Repor os dados de demonstração? Tudo o que foi alterado será substituído pelos dados de exemplo.')) return
+    if (!confirm(t('Repor os dados de demonstração? Tudo o que foi alterado será substituído pelos dados de exemplo.'))) return
     setResetting(true)
     try {
       await resetDemo()
       await load()
-      toast('Dados de demonstração repostos.')
+      toast(t('Dados de demonstração repostos.'))
     } catch (err) {
       toast(friendlyError(err), 'danger')
     } finally {
@@ -65,34 +66,34 @@ export default function Overview() {
       <header className="page-head">
         <div>
           <p className="page-date">{fmtLongDate(today)}</p>
-          <h1>Visão geral</h1>
+          <h1>{t('Visão geral')}</h1>
         </div>
-        <button className="btn btn-ghost" onClick={onReset} disabled={resetting} title="Volta a pôr os dados de exemplo">
+        <button className="btn btn-ghost" onClick={onReset} disabled={resetting} title={t('Volta a pôr os dados de exemplo')}>
           <Icon name="refresh" />
-          {resetting ? 'Repondo…' : 'Repor dados de demonstração'}
+          {resetting ? t('Repondo…') : t('Repor dados de demonstração')}
         </button>
       </header>
 
       <section className="stats">
-        <Stat label="Atendimentos hoje" value={todays.length}
-          note={`${todays.filter((a) => a.status === 'confirmado').length} confirmados`} />
-        <Stat label={`A confirmar · ${nextDay ? fmtRelativeDay(nextDay).toLowerCase() : 'próximo dia'}`}
+        <Stat label={t('Atendimentos hoje')} value={todays.length}
+          note={t('{n} confirmados', { n: todays.filter((a) => a.status === 'confirmado').length })} />
+        <Stat label={`${t('A confirmar')} · ${nextDay ? fmtRelativeDay(nextDay).toLowerCase() : t('próximo dia')}`}
           value={toConfirm.length} tone={toConfirm.length ? 'warn' : undefined}
-          note={`de ${nextDayAppts.length} agendados`} />
-        <Stat label="Aguardando a recepção" value={waiting.length} tone={waiting.length ? 'danger' : undefined}
-          note={waiting.length ? 'a assistente está pausada nessas conversas' : 'nenhuma conversa parada'} />
-        <Stat label="Previsto em 7 dias" value={money(weekRevenue)}
-          note={`${viaWhatsapp} de ${week.length} agendados pelo WhatsApp`} />
+          note={t('de {n} agendados', { n: nextDayAppts.length })} />
+        <Stat label={t('Aguardando a recepção')} value={waiting.length} tone={waiting.length ? 'danger' : undefined}
+          note={waiting.length ? t('a assistente está pausada nessas conversas') : t('nenhuma conversa parada')} />
+        <Stat label={t('Previsto em 7 dias')} value={money(weekRevenue)}
+          note={t('{a} de {b} agendados pelo WhatsApp', { a: viaWhatsapp, b: week.length })} />
       </section>
 
       <div className="overview-grid">
         <section className="panel">
           <header className="panel-head">
-            <h2>Hoje</h2>
-            <Link to="/agenda" className="link">Abrir agenda</Link>
+            <h2>{t('Hoje')}</h2>
+            <Link to="/agenda" className="link">{t('Abrir agenda')}</Link>
           </header>
           {todays.length === 0 ? (
-            <Empty icon="calendar" title="Nenhum atendimento hoje">A clínica pode estar fechada ou a agenda está livre.</Empty>
+            <Empty icon="calendar" title={t('Nenhum atendimento hoje')}>{t('A clínica pode estar fechada ou a agenda está livre.')}</Empty>
           ) : (
             <ol className="timeline">
               {todays.map((a) => (
@@ -111,10 +112,10 @@ export default function Overview() {
 
         <section className="panel">
           <header className="panel-head">
-            <h2>Precisa de atenção</h2>
+            <h2>{t('Precisa de atenção')}</h2>
           </header>
           {waiting.length === 0 && toConfirm.length === 0 ? (
-            <Empty icon="check" title="Tudo em dia">Nenhuma conversa à espera e todos confirmaram.</Empty>
+            <Empty icon="check" title={t('Tudo em dia')}>{t('Nenhuma conversa à espera e todos confirmaram.')}</Empty>
           ) : (
             <ul className="attention">
               {waiting.map((c) => (
@@ -125,7 +126,7 @@ export default function Overview() {
                       <strong>{c.name}</strong>
                       <span className="clip">{c.messages?.[0]?.body}</span>
                     </div>
-                    <Badge tone="danger">Quer falar com a recepção</Badge>
+                    <Badge tone="danger">{t('Quer falar com a recepção')}</Badge>
                     <span className="muted small">{fmtWhen(c.last_message_at)}</span>
                   </Link>
                 </li>
@@ -137,10 +138,10 @@ export default function Overview() {
                     <div>
                       <strong>{a.customer?.name}</strong>
                       <span>
-                        {a.service?.name} · {fmtRelativeDay(nextDay).toLowerCase()} às {fmtTime(a.starts_at)}
+                        {a.service?.name} · {fmtRelativeDay(nextDay).toLowerCase()} {t('às')} {fmtTime(a.starts_at)}
                       </span>
                     </div>
-                    <Badge tone="warn">{a.reminder_sent_at ? 'Sem resposta ao lembrete' : 'Lembrete pendente'}</Badge>
+                    <Badge tone="warn">{a.reminder_sent_at ? t('Sem resposta ao lembrete') : t('Lembrete pendente')}</Badge>
                     <span className="muted small">{fmtTime(a.starts_at)}</span>
                   </Link>
                 </li>

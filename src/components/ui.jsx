@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import Icon from './Icon'
+import { t } from '../lib/i18n'
 
 /* ---------- Etiqueta colorida ---------- */
 export function Badge({ tone = 'muted', children }) {
@@ -22,7 +23,7 @@ export function Modal({ title, onClose, children, footer, wide = false }) {
       <div className={`modal ${wide ? 'modal-wide' : ''}`} role="dialog" aria-modal="true" aria-label={title} ref={panelRef}>
         <header className="modal-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Fechar">
+          <button className="icon-btn" onClick={onClose} aria-label={t('Fechar')}>
             <Icon name="x" />
           </button>
         </header>
@@ -71,11 +72,11 @@ export function Empty({ icon = 'sparkles', title, children }) {
   )
 }
 
-export function Loading({ label = 'Carregando…' }) {
+export function Loading({ label }) {
   return (
     <div className="loading" role="status">
       <span className="spinner" />
-      {label}
+      {label ?? t('Carregando…')}
     </div>
   )
 }

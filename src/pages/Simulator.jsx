@@ -4,6 +4,7 @@ import { clearCache, getCustomerByPhone, listMessages, setBotPaused, simulateInc
 import { fmtTime, friendlyError } from '../lib/format'
 import { ErrorBox, useToast } from '../components/ui'
 import Icon from '../components/Icon'
+import { t } from '../lib/i18n'
 
 const KEY = 'aurora-simulador'
 const SUGGESTIONS = [
@@ -77,7 +78,7 @@ export default function Simulator() {
 
   function start(e) {
     e.preventDefault()
-    const id = { name: nameDraft.trim() || 'Visitante', phone: randomPhone() }
+    const id = { name: nameDraft.trim() || t('Visitante'), phone: randomPhone() }
     saveIdentity(id)
     setMe(id)
     setMessages([])
@@ -125,7 +126,7 @@ export default function Simulator() {
   async function resumeBot() {
     try {
       await setBotPaused(customer.id, false)
-      toast('A assistente voltou a responder esta conversa.')
+      toast(t('A assistente voltou a responder esta conversa.'))
       load()
     } catch (err) {
       toast(friendlyError(err), 'danger')
@@ -136,12 +137,12 @@ export default function Simulator() {
     <div className="page">
       <header className="page-head">
         <div>
-          <p className="page-date">Teste a assistente como se fosse uma cliente</p>
-          <h1>Simulador</h1>
+          <p className="page-date">{t('Teste a assistente como se fosse uma cliente')}</p>
+          <h1>{t('Simulador')}</h1>
         </div>
         {me && (
           <button className="btn btn-ghost" onClick={restart}>
-            <Icon name="refresh" /> Começar como outra cliente
+            <Icon name="refresh" /> {t('Começar como outra cliente')}
           </button>
         )}
       </header>
@@ -149,7 +150,7 @@ export default function Simulator() {
       <ErrorBox>{error}</ErrorBox>
 
       <div className="sim">
-        <div className="phone" aria-label="Simulação do WhatsApp">
+        <div className="phone" aria-label={t('Simulação do WhatsApp')}>
           <div className="phone-head">
             <span className="phone-avatar" aria-hidden="true">
               <svg viewBox="0 0 64 64" width="22" height="22">
@@ -158,34 +159,34 @@ export default function Simulator() {
               </svg>
             </span>
             <div>
-              <strong>Clínica Aurora Estética</strong>
-              <span>{typing ? 'digitando…' : 'online'}</span>
+              <strong>{t('Clínica Aurora Estética')}</strong>
+              <span>{typing ? t('digitando…') : 'online'}</span>
             </div>
           </div>
 
           {!me ? (
             <form className="phone-start" onSubmit={start}>
-              <p>Digite seu nome para começar uma conversa com a clínica.</p>
+              <p>{t('Digite seu nome para começar uma conversa com a clínica.')}</p>
               <input
                 value={nameDraft}
                 onChange={(e) => setNameDraft(e.target.value)}
-                placeholder="Ex.: Ana Paula"
-                aria-label="Seu nome"
+                placeholder={t('Ex.: Ana Paula')}
+                aria-label={t('Seu nome')}
                 maxLength={40}
               />
-              <button className="btn btn-primary btn-block">Começar conversa</button>
+              <button className="btn btn-primary btn-block">{t('Começar conversa')}</button>
             </form>
           ) : (
             <>
               <div className="phone-body">
                 {messages.length === 0 && !typing && (
-                  <p className="phone-hint">Envie uma mensagem ou toque em uma sugestão abaixo.</p>
+                  <p className="phone-hint">{t('Envie uma mensagem ou toque em uma sugestão abaixo.')}</p>
                 )}
                 <ol className="bubbles">
                   {messages.map((m) => (
                     <li key={m.id} className={`bubble-row from-${m.sender === 'cliente' ? 'me' : 'clinic'}`}>
                       <div className="bubble">
-                        {m.sender === 'humano' && <span className="bubble-author">Recepção</span>}
+                        {m.sender === 'humano' && <span className="bubble-author">{t('Recepção')}</span>}
                         <p>{m.body}</p>
                         <time>{fmtTime(m.created_at)}</time>
                       </div>
@@ -193,7 +194,7 @@ export default function Simulator() {
                   ))}
                   {typing && (
                     <li className="bubble-row from-clinic">
-                      <div className="bubble typing" aria-label="digitando">
+                      <div className="bubble typing" aria-label={t('digitando…')}>
                         <span />
                         <span />
                         <span />
@@ -206,15 +207,15 @@ export default function Simulator() {
 
               {customer?.bot_paused && (
                 <div className="phone-paused">
-                  <span>A recepção assumiu esta conversa. As respostas agora vêm da equipe, em Conversas.</span>
+                  <span>{t('A recepção assumiu esta conversa. As respostas agora vêm da equipe, em Conversas.')}</span>
                   <button type="button" className="btn btn-soft btn-sm" onClick={resumeBot}>
-                    Devolver à assistente
+                    {t('Devolver à assistente')}
                   </button>
                 </div>
               )}
 
-              <div className="phone-chips" role="group" aria-label="Sugestões">
-                {SUGGESTIONS.map((s) => (
+              <div className="phone-chips" role="group" aria-label={t('Sugestões')}>
+                {SUGGESTIONS.map((s) => t(s)).map((s) => (
                   <button key={s} type="button" className="chip" onClick={() => send(s)} disabled={typing}>
                     {s}
                   </button>
@@ -231,11 +232,11 @@ export default function Simulator() {
                 <input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Mensagem"
-                  aria-label="Mensagem"
+                  placeholder={t('Mensagem')}
+                  aria-label={t('Mensagem')}
                   maxLength={500}
                 />
-                <button className="phone-send" disabled={!draft.trim() || typing} aria-label="Enviar">
+                <button className="phone-send" disabled={!draft.trim() || typing} aria-label={t('Enviar')}>
                   <Icon name="send" />
                 </button>
               </form>
@@ -245,26 +246,24 @@ export default function Simulator() {
 
         <aside className="sim-side">
           <section className="panel">
-            <h2>Como funciona</h2>
+            <h2>{t('Como funciona')}</h2>
             <p className="muted small">
-              Cada mensagem segue o mesmo caminho de uma mensagem real do WhatsApp: fica gravada, a assistente decide a
-              resposta e a conversa aparece no painel.
+              {t('Cada mensagem segue o mesmo caminho de uma mensagem real do WhatsApp: fica gravada, a assistente decide a resposta e a conversa aparece no painel.')}
             </p>
             <ul className="sim-list">
-              <li><strong>Preços, endereço e horários</strong> têm resposta automática.</li>
-              <li><strong>“Quero falar com uma atendente”</strong> pausa a assistente e avisa a recepção.</li>
-              <li><strong>Lembretes:</strong> na Agenda, escolha amanhã e toque em “Enviar lembretes”. Depois responda <strong>1</strong> aqui para confirmar.</li>
-              <li><strong>Recepção:</strong> em Conversas, assuma a conversa e responda. A resposta aparece nesta tela.</li>
+              <li><strong>{t('Preços, endereço e horários')}</strong> {t('têm resposta automática.')}</li>
+              <li><strong>{t('“Quero falar com uma atendente”')}</strong> {t('pausa a assistente e avisa a recepção.')}</li>
+              <li><strong>{t('Lembretes:')}</strong> {t('na Agenda, escolha amanhã e toque em “Enviar lembretes”. Depois responda 1 aqui para confirmar.')}</li>
+              <li><strong>{t('Recepção:')}</strong> {t('em Conversas, assuma a conversa e responda. A resposta aparece nesta tela.')}</li>
             </ul>
             {customer && (
               <Link to={`/conversas?c=${customer.id}`} className="btn btn-soft btn-block">
-                <Icon name="chat" /> Ver esta conversa no painel
+                <Icon name="chat" /> {t('Ver esta conversa no painel')}
               </Link>
             )}
           </section>
           <p className="muted small sim-note">
-            Com a IA ligada (em Configurações), a assistente responde a qualquer pergunta e agenda sozinha nos horários
-            livres. Com a IA desligada, usa respostas por palavras-chave.
+            {t('Com a IA ligada (em Configurações), a assistente responde a qualquer pergunta e agenda sozinha nos horários livres. Com a IA desligada, usa respostas por palavras-chave.')}
           </p>
         </aside>
       </div>

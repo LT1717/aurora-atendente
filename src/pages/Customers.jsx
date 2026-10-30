@@ -4,6 +4,7 @@ import { deleteCustomer, listCustomers, saveCustomer } from '../lib/api'
 import { STAGES, fmtPhone, fmtWhen, friendlyError, normalizePhone } from '../lib/format'
 import { Avatar, Badge, Empty, ErrorBox, Field, Loading, Modal, Switch, useToast } from '../components/ui'
 import Icon from '../components/Icon'
+import { t } from '../lib/i18n'
 
 export default function Customers() {
   const toast = useToast()
@@ -34,10 +35,10 @@ export default function Customers() {
   }, [rows, query, stage])
 
   async function remove(c) {
-    if (!confirm(`Excluir ${c.name || 'este cliente'}? Os agendamentos e conversas dele também serão apagados.`)) return
+    if (!confirm(t('Excluir {n}? Os agendamentos e conversas dele também serão apagados.', { n: c.name || t('este cliente') }))) return
     try {
       await deleteCustomer(c.id)
-      toast('Cliente excluído.')
+      toast(t('Cliente excluído.'))
       setEditing(null)
       load()
     } catch (err) {
@@ -49,21 +50,21 @@ export default function Customers() {
     <div className="page">
       <header className="page-head">
         <div>
-          <p className="page-date">{rows ? `${rows.length} contatos` : ' '}</p>
-          <h1>Clientes</h1>
+          <p className="page-date">{rows ? t('{n} contatos', { n: rows.length }) : ' '}</p>
+          <h1>{t('Clientes')}</h1>
         </div>
         <button className="btn btn-primary" onClick={() => setEditing({ name: '', phone: '', notes: '', stage: 'novo', bot_paused: false })}>
-          <Icon name="plus" /> Novo cliente
+          <Icon name="plus" /> {t('Novo cliente')}
         </button>
       </header>
 
       <div className="toolbar">
         <div className="search">
           <Icon name="search" />
-          <input type="search" placeholder="Buscar por nome ou telefone" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar" />
+          <input type="search" placeholder={t('Buscar por nome ou telefone')} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t('Buscar')} />
         </div>
-        <div className="chips" role="group" aria-label="Filtrar por etapa">
-          <button className={`chip ${!stage ? 'is-active' : ''}`} onClick={() => setStage('')}>Todos</button>
+        <div className="chips" role="group" aria-label={t('Filtrar por etapa')}>
+          <button className={`chip ${!stage ? 'is-active' : ''}`} onClick={() => setStage('')}>{t('Todos')}</button>
           {Object.entries(STAGES).map(([k, s]) => (
             <button key={k} className={`chip ${stage === k ? 'is-active' : ''}`} onClick={() => setStage(k)}>
               {s.label}
@@ -78,17 +79,17 @@ export default function Customers() {
         {!rows ? (
           <Loading />
         ) : filtered.length === 0 ? (
-          <Empty icon="users" title="Nenhum cliente encontrado">Tente outra busca ou outro filtro.</Empty>
+          <Empty icon="users" title={t('Nenhum cliente encontrado')}>{t('Tente outra busca ou outro filtro.')}</Empty>
         ) : (
           <table className="table table-customers">
             <thead>
               <tr>
-                <th>Cliente</th>
+                <th>{t('Cliente')}</th>
                 <th>WhatsApp</th>
-                <th>Etapa</th>
-                <th className="num">Agendamentos</th>
-                <th>Último contato</th>
-                <th><span className="sr-only">Ações</span></th>
+                <th>{t('Etapa')}</th>
+                <th className="num">{t('Agendamentos')}</th>
+                <th>{t('Último contato')}</th>
+                <th><span className="sr-only">{t('Ações')}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -98,7 +99,7 @@ export default function Customers() {
                     <div className="cell-person">
                       <Avatar name={c.name} />
                       <div>
-                        <strong>{c.name || 'Sem nome'}</strong>
+                        <strong>{c.name || t('Sem nome')}</strong>
                         {c.notes && <span className="muted small clip">{c.notes}</span>}
                       </div>
                     </div>
@@ -106,17 +107,17 @@ export default function Customers() {
                   <td className="nowrap">{fmtPhone(c.phone)}</td>
                   <td>
                     <Badge tone={STAGES[c.stage]?.tone}>{STAGES[c.stage]?.label}</Badge>
-                    {c.bot_paused && <Badge tone="warn">Assistente pausada</Badge>}
+                    {c.bot_paused && <Badge tone="warn">{t('Assistente pausada')}</Badge>}
                   </td>
                   <td className="num">{c.appointments?.[0]?.count ?? 0}</td>
                   <td className="muted">{c.last_message_at ? fmtWhen(c.last_message_at) : '—'}</td>
                   <td className="actions">
                     {c.last_message_at && (
-                      <Link to={`/conversas?c=${c.id}`} className="icon-btn" onClick={(e) => e.stopPropagation()} aria-label="Abrir conversa">
+                      <Link to={`/conversas?c=${c.id}`} className="icon-btn" onClick={(e) => e.stopPropagation()} aria-label={t('Abrir conversa')}>
                         <Icon name="chat" />
                       </Link>
                     )}
-                    <button className="icon-btn" aria-label="Editar"><Icon name="edit" /></button>
+                    <button className="icon-btn" aria-label={t('Editar')}><Icon name="edit" /></button>
                   </td>
                 </tr>
               ))}
@@ -132,7 +133,7 @@ export default function Customers() {
           onDelete={() => remove(editing)}
           onSaved={() => {
             setEditing(null)
-            toast('Cliente salvo.')
+            toast(t('Cliente salvo.'))
             load()
           }}
         />
@@ -150,7 +151,7 @@ function CustomerForm({ customer, onClose, onSaved, onDelete }) {
   async function save(e) {
     e.preventDefault()
     const phone = normalizePhone(form.phone)
-    if (phone.length < 12) return setError('Informe o WhatsApp com DDD, ex.: 11 98765-4321.')
+    if (phone.length < 12) return setError(t('Informe o WhatsApp com DDD, ex.: 11 98765-4321.'))
     setBusy(true)
     try {
       await saveCustomer({
@@ -171,42 +172,42 @@ function CustomerForm({ customer, onClose, onSaved, onDelete }) {
 
   return (
     <Modal
-      title={form.id ? 'Editar cliente' : 'Novo cliente'}
+      title={form.id ? t('Editar cliente') : t('Novo cliente')}
       onClose={onClose}
       footer={
         <>
           {form.id && (
             <button type="button" className="btn btn-danger-ghost push-left" onClick={onDelete}>
-              <Icon name="trash" /> Excluir
+              <Icon name="trash" /> {t('Excluir')}
             </button>
           )}
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn btn-primary" form="customer-form" disabled={busy}>{busy ? 'Salvando…' : 'Salvar'}</button>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>{t('Cancelar')}</button>
+          <button className="btn btn-primary" form="customer-form" disabled={busy}>{busy ? t('Salvando…') : t('Salvar')}</button>
         </>
       }
     >
       <form id="customer-form" className="form-grid" onSubmit={save}>
-        <Field label="Nome" className="span-2">
+        <Field label={t('Nome')} className="span-2">
           <input value={form.name || ''} onChange={set('name')} />
         </Field>
-        <Field label="WhatsApp" hint="Com DDD">
+        <Field label="WhatsApp" hint={t('Com DDD')}>
           <input value={form.phone} onChange={set('phone')} inputMode="tel" required />
         </Field>
-        <Field label="Etapa">
+        <Field label={t('Etapa')}>
           <select value={form.stage} onChange={set('stage')}>
             {Object.entries(STAGES).map(([k, s]) => (
               <option key={k} value={k}>{s.label}</option>
             ))}
           </select>
         </Field>
-        <Field label="Observações" className="span-2">
+        <Field label={t('Observações')} className="span-2">
           <textarea rows={3} value={form.notes || ''} onChange={set('notes')} />
         </Field>
         <div className="span-2 switch-row">
-          <Switch checked={!form.bot_paused} onChange={(on) => setForm((f) => ({ ...f, bot_paused: !on }))} label="Assistente responde a este cliente" />
+          <Switch checked={!form.bot_paused} onChange={(on) => setForm((f) => ({ ...f, bot_paused: !on }))} label={t('Assistente responde a este cliente')} />
           <div>
-            <strong>Assistente responde a este cliente</strong>
-            <p className="muted small">Desligue para que só a recepção responda a este número.</p>
+            <strong>{t('Assistente responde a este cliente')}</strong>
+            <p className="muted small">{t('Desligue para que só a recepção responda a este número.')}</p>
           </div>
         </div>
         <div className="span-2"><ErrorBox>{error}</ErrorBox></div>
